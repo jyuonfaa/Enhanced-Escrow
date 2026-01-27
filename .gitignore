@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+dist/
+build/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+admin_debug_log.txt
+debug_upload.log
+server_5002.log
+server_test.log
+
+# IDEs and Editors
+.visualstudio
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Project-specific temp scripts and logs
+check_users.js
+cleanup.js
+verify_admin.js
+verify_db.js
+
+backend/check_counts.ts
+backend/check_data.ts
+backend/check_recent.js
+backend/debug_roles.js
+backend/debug_schema.ts
+backend/debug_transactions.ts
+backend/debug_user_keys.ts
+backend/debug_users.ts
+backend/debug_users_raw.ts
+backend/diag_db.js
+backend/diag_jobs.js
+backend/diag_sellers.js
+backend/diagnose_db.ts
+backend/find_admins.js
+backend/find_agents.js
+backend/find_product.js
+backend/find_users.js
+backend/fix_schema.ts
+backend/reset.sql
+backend/reset_database.js
+backend/reset_database.ts
+backend/run_prisma.js
+backend/test_api.js
+backend/test_api_running.js
+backend/test_connection.ts
+backend/test_http_upload.js
+backend/test_upload.js
+backend/verify_24h_logic.ts
+backend/verify_dispute_delivery.js
+backend/verify_flow.js
+backend/verify_products.ts
+backend/verify_seller_7.js
+
+# Prisma
+backend/prisma/migrations/
+# (Optional) Keep migrations but ignore SQLite db if any
+# *.db
+# *.db-journal

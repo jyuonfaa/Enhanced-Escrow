@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  phone        String
+  role         String   // BUYER, SELLER, AGENT, ADMIN
+  isSuspended  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products     Product[]
+  purchases    Transaction[] @relation("Buyer")
+  sales        Transaction[] @relation("Seller")
+  deliveries   Transaction[] @relation("Agent")
+  initiatedDisputes Dispute[] @relation("DisputeInitiator")
+  resolvedDisputes  Dispute[] @relation("DisputeAdmin")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  sellerId    Int
+  seller      User     @relation(fields: [sellerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id               Int      @id @default(autoincrement())
+  buyerId          Int
+  buyer            User     @relation("Buyer", fields: [buyerId], references: [id])
+  sellerId         Int
+  seller           User     @relation("Seller", fields: [sellerId], references: [id])
+  productId        Int
+  product          Product  @relation(fields: [productId], references: [id])
+  agentId          Int?
+  agent            User?    @relation("Agent", fields: [agentId], references: [id])
+  amount           Float
+  status           String   // PENDING, ESCROW_HELD, DELIVERED, COMPLETED, DISPUTED, REFUNDED
+  escrowCode       String?  // OTP
+  deliveryPhotoUrl String?
+  deliveryAddress  String?
+  buyerLat         Float?
+  buyerLng         Float?
+  agentLat         Float?
+  agentLng         Float?
+  deliveredAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  disputes         Dispute[]
+}
+
+model Dispute {
+  id              Int      @id @default(autoincrement())
+  transactionId   Int
+  transaction     Transaction @relation(fields: [transactionId], references: [id])
+  initiatorId     Int
+  initiator       User     @relation("DisputeInitiator", fields: [initiatorId], references: [id])
+  reason          String
+  sellerResponse  String?
+  itemStatus      String?  // RECEIVED, BOUNCED
+  status          String   // OPEN, RESOLVED
+  decision        String?  // REFUND_BUYER, RELEASE_SELLER
+  decisionReason  String?
+  adminId         Int?
+  admin           User?    @relation("DisputeAdmin", fields: [adminId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

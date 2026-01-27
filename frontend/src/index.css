@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors - Modern Indigo Palette */
+  --color-brand: #6366f1;
+  --color-brand-light: #818cf8;
+  --color-brand-dark: #4f46e5;
+  --color-brand-surface: rgba(99, 102, 241, 0.08);
+
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9;
+
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Layout */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --container-max-width: 1200px;
+  --nav-height: 72px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography Helpers */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5em;
+  color: var(--text-main);
+}
+
+p {
+  color: var(--text-muted);
+}
+
+/* Global Container */
+.page-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - var(--nav-height));
+}
+
+/* Card Style */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Button System */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  gap: 0.5rem;
+  border: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+  background-color: var(--color-brand);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-brand-dark);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-surface-muted);
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Map Geocoder Search Fixes */
+.leaflet-control-geocoder {
+  min-width: 250px !important;
+  background: white !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+}
+
+.leaflet-control-geocoder-icon {
+  border-radius: 8px !important;
+}
+
+.leaflet-control-geocoder-form input {
+  font-family: inherit !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+}
