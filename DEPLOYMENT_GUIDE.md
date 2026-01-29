@@ -27,3 +27,12 @@
 ## Local Development
 - Backend: `npm run dev` (Port 5000)
 - Frontend: `npm run dev` (Port 3000)
+
+## Keep Alive Configuration (Render + Supabase)
+To prevent the Render free tier from spinning down due to inactivity and to keep the Supabase database active:
+1.  A GitHub Action (`.github/workflows/keep-alive.yml`) has been set up to ping the backend every 14 minutes.
+2.  **Critical Setup**: You must add a Repository Secret to your GitHub repo:
+    -   Go to **Settings** > **Secrets and variables** > **Actions** > **New repository secret**.
+    -   Name: `RENDER_URL`
+    -   Value: Your full backend URL (e.g., `https://enhanced-escrow-backend.onrender.com`).
+3.  Without this secret, the keep-alive ping will not work.
