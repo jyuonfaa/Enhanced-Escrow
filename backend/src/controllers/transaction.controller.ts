@@ -61,23 +61,26 @@ export const getUserTransactions = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Filter out any potential corrupted transactions where product might be missing
-        const validTransactions = transactions.filter(t => t.product);
+        // Map transactions to handle potentially deleted products
+        const enhancedTransactions = transactions.map(t => {
+            const product = t.product || { name: 'Deleted Product', description: 'This product is no longer available', price: t.amount };
 
-        // Add calculated field for UI convenience
-        const enhancedTransactions = validTransactions.map(t => {
             let isPending = true;
+            const now = new Date();
+
             if (t.status === 'COMPLETED' || t.status === 'RETURNED' || t.status === 'REFUNDED') {
                 isPending = false;
             } else if (t.status === 'DELIVERED' && t.deliveredAt) {
-                const now = new Date();
                 const deliveredAt = new Date(t.deliveredAt);
                 const diffHours = (now.getTime() - deliveredAt.getTime()) / (1000 * 60 * 60);
-                if (diffHours > 24) {
+                const hasOpenDispute = t.disputes?.some((d: any) => d.status === 'OPEN') || false;
+
+                // If delivered over 24h ago and no open disputes, it's effectively completed
+                if (diffHours > 24 && !hasOpenDispute) {
                     isPending = false;
                 }
             }
-            return { ...t, isPending };
+            return { ...t, product, isPending };
         });
 
         res.json(enhancedTransactions);
@@ -104,12 +107,12 @@ export const getSellerStats = async (req: Request, res: Response) => {
 
         transactions.forEach(t => {
             let isCompleted = false;
+
             if (t.status === 'COMPLETED') {
                 isCompleted = true;
             } else if (t.status === 'DELIVERED' && t.deliveredAt) {
                 const deliveredAt = new Date(t.deliveredAt);
                 const diffHours = (now.getTime() - deliveredAt.getTime()) / (1000 * 60 * 60);
-                // If delivered over 24h ago and no open disputes
                 const hasOpenDispute = t.disputes.some(d => d.status === 'OPEN');
                 if (diffHours > 24 && !hasOpenDispute) {
                     isCompleted = true;
@@ -119,8 +122,7 @@ export const getSellerStats = async (req: Request, res: Response) => {
             if (isCompleted) {
                 salesMade += t.amount;
             } else {
-                // Only count items still in the lifecycle (exclude REFUNDED/RETURNED if they don't count as escrow)
-                // Actually, escrow balance is money currently held.
+                // Keep inclusive of DISPUTED items that are not yet refunded
                 if (['ESCROW_HELD', 'AWAITING_OTP', 'DELIVERED', 'DISPUTED'].includes(t.status)) {
                     escrowBalance += t.amount;
                 }

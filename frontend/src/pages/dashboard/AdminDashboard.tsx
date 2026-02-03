@@ -7,6 +7,7 @@ import {
     getAllUsers,
     getAllTransactions,
     toggleUserSuspension,
+    getAdminAgents,
     AdminStats,
     GlobalUser,
     GlobalTransaction
@@ -47,12 +48,16 @@ const AdminDashboard: React.FC = () => {
     }, []);
 
     const loadInitialData = async () => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const [statsData, disputesData, agentsData] = await Promise.all([
                 getAdminStats(),
                 getAllDisputes(),
-                getAgents()
+                getAdminAgents()
             ]);
             setStats(statsData);
             setDisputes(disputesData);
@@ -188,7 +193,7 @@ const AdminDashboard: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
                     <StatCard label="Total Users" value={stats?.users || 0} icon="👥" />
                     <StatCard label="Total Transactions" value={stats?.transactions || 0} icon="📦" />
-                    <StatCard label="Escrow Volume" value={`$${stats?.escrowHeld.toFixed(2) || '0.00'}`} icon="💰" />
+                    <StatCard label="Escrow Volume" value={`GH₵${stats?.escrowHeld.toFixed(2) || '0.00'}`} icon="💰" />
                     <StatCard label="Open Disputes" value={stats?.openDisputes || 0} icon="⚖️" color="var(--color-error)" />
                 </div>
             )}
@@ -456,17 +461,25 @@ const AdminDashboard: React.FC = () => {
                                     )}
 
                                     {d.status === 'OPEN' && (
-                                        <div style={{ marginTop: '1rem', display: 'grid', gap: '0.75rem' }}>
-                                            <textarea
-                                                placeholder="State the reason for this decision (logged)..."
-                                                value={resolutionReason[d.id] || ''}
-                                                onChange={(e) => setResolutionReason({ ...resolutionReason, [d.id]: e.target.value })}
-                                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', minHeight: '60px' }}
-                                            />
-                                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                                <button onClick={() => handleResolve(d.id, 'REFUND_BUYER')} className="btn btn-primary" style={{ flex: 1, backgroundColor: 'var(--color-error)' }}>Refund Buyer</button>
-                                                <button onClick={() => handleResolve(d.id, 'RELEASE_SELLER')} className="btn btn-primary" style={{ flex: 1, backgroundColor: 'var(--color-success)' }}>Release to Seller</button>
-                                            </div>
+                                        <div style={{ marginTop: '1rem' }}>
+                                            {d.itemStatus === 'BOUNCED' ? (
+                                                <div style={{ padding: '0.75rem', background: '#fffbeb', color: '#92400e', borderRadius: '4px', border: '1px solid #fef3c7', fontSize: '0.875rem' }}>
+                                                    <strong>Automated Refund Flow:</strong> This item was rejected at the doorstep. A refund will trigger automatically once the seller confirms the return. No action required from Admin.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                                    <textarea
+                                                        placeholder="State the reason for this decision (logged)..."
+                                                        value={resolutionReason[d.id] || ''}
+                                                        onChange={(e) => setResolutionReason({ ...resolutionReason, [d.id]: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', minHeight: '60px' }}
+                                                    />
+                                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                                        <button onClick={() => handleResolve(d.id, 'REFUND_BUYER')} className="btn btn-primary" style={{ flex: 1, backgroundColor: 'var(--color-error)' }}>Refund Buyer</button>
+                                                        <button onClick={() => handleResolve(d.id, 'RELEASE_SELLER')} className="btn btn-primary" style={{ flex: 1, backgroundColor: 'var(--color-success)' }}>Release to Seller</button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

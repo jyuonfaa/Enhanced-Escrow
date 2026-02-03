@@ -20,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setToken(storedToken);
             setUser(JSON.parse(storedUser));
         }
+        setLoading(false);
     }, []);
 
     const login = (newToken: string, newUser: User) => {
@@ -45,6 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const isAuthenticated = !!token;
+
+    if (loading) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-app)' }}>
+            <div className="loader"></div>
+        </div>;
+    }
 
     return (
         <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>

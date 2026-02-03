@@ -5,11 +5,24 @@ import prisma from '../prisma';
 export const createProduct = async (req: Request, res: Response) => {
     try {
         const { name, description, price, imageUrl, sellerId } = req.body;
-        // In a real app, we'd verify req.user.id matches sellerId or comes from token
+        const authUser = (req as any).user;
+        const sellerIdNum = Number(sellerId);
 
         const parsedPrice = parseFloat(price);
         if (isNaN(parsedPrice) || parsedPrice < 1) {
             return res.status(400).json({ message: 'Price must be at least 1 GHS.' });
+        }
+
+        // Security: Ensure the authenticated user matches the sellerId in the body
+        // and that the user actually has the SELLER role.
+        const seller = await prisma.user.findUnique({ where: { id: sellerIdNum } });
+
+        if (!seller || seller.role !== 'SELLER') {
+            return res.status(403).json({ message: 'Only users with the SELLER role can list products.' });
+        }
+
+        if (authUser.role !== 'ADMIN' && authUser.userId !== sellerIdNum) {
+            return res.status(403).json({ message: 'Unauthorized. You can only list products for your own account.' });
         }
 
         const product = await prisma.product.create({
@@ -18,7 +31,7 @@ export const createProduct = async (req: Request, res: Response) => {
                 description,
                 price: parsedPrice,
                 imageUrl,
-                sellerId: Number(sellerId), // Ensure number
+                sellerId: sellerIdNum,
             },
         });
         res.status(201).json(product);

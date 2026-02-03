@@ -12,6 +12,10 @@ export const register = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
+        if (!['BUYER', 'SELLER'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role. Choose BUYER or SELLER.' });
+        }
+
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
@@ -81,12 +85,25 @@ export const login = async (req: Request, res: Response) => {
 
 export const getAgents = async (req: Request, res: Response) => {
     try {
-        const agents = await prisma.user.findMany({
-            where: { role: 'AGENT' },
-            select: { id: true, fullName: true, email: true, phone: true }
-        });
-        res.json(agents);
+        // Use raw query to ensure we capture the correctly cased column names from Postgres
+        const agents: any[] = await prisma.$queryRaw`
+            SELECT id, email, "fullName", phone, "isSuspended" 
+            FROM "User" 
+            WHERE role = 'AGENT' AND ("isSuspended" = false OR "isSuspended" IS NULL)
+        `;
+
+        const mappedAgents = agents.map(a => ({
+            id: a.id,
+            email: a.email,
+            // Handle both potential casings in case mapper is used elsewhere
+            fullName: a.fullName || a.fullname,
+            phone: a.phone,
+            isSuspended: a.isSuspended ?? a.issuspended ?? false
+        }));
+
+        res.json(mappedAgents);
     } catch (error) {
+        console.error('getAgents error:', error);
         res.status(500).json({ message: 'Error fetching agents' });
     }
 };

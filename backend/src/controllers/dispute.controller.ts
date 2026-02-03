@@ -103,6 +103,14 @@ export const resolveDispute = async (req: Request, res: Response) => {
         const dispute = await prisma.dispute.findUnique({ where: { id: disputeId } });
         if (!dispute) return res.status(404).json({ message: 'Dispute not found' });
 
+        // Logic Refinement: If it's a BOUNCED item (refused at door), admin doesn't resolve.
+        // It's resolved automatically when seller confirms receipt of the returned item.
+        if (dispute.itemStatus === 'BOUNCED' && dispute.status === 'OPEN') {
+            return res.status(400).json({
+                message: 'This item was bounced (rejected at doorstep). Refund will be processed automatically once the seller confirms they have received the item back.'
+            });
+        }
+
         // Update Dispute
         const updatedDispute = await prisma.dispute.update({
             where: { id: disputeId },

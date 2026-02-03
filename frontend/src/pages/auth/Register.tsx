@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -16,6 +16,13 @@ const Register: React.FC = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            navigate('/dashboard');
+        }
+    }, [navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

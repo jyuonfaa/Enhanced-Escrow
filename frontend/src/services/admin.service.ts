@@ -63,3 +63,8 @@ export const getAllTransactions = async (): Promise<GlobalTransaction[]> => {
     const response = await api.get('/admin/transactions');
     return response.data;
 };
+
+export const getAdminAgents = async (): Promise<GlobalUser[]> => {
+    const response = await api.get('/admin/agents');
+    return response.data;
+};

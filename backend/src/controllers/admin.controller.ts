@@ -9,9 +9,33 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         const totalProducts = await prisma.product.count();
         const openDisputes = await prisma.dispute.count({ where: { status: 'OPEN' } });
 
-        const escrowSum = await prisma.transaction.aggregate({
-            where: { status: 'ESCROW_HELD' },
-            _sum: { amount: true }
+        const transactions = await prisma.transaction.findMany({
+            where: {
+                status: { in: ['ESCROW_HELD', 'AWAITING_OTP', 'DELIVERED', 'DISPUTED'] }
+            },
+            select: { amount: true, status: true, deliveredAt: true, disputes: { select: { status: true } } }
+        });
+
+        let escrowHeld = 0;
+        const now = new Date();
+
+        transactions.forEach(t => {
+            let stillInEscrow = true;
+
+            if (t.status === 'DELIVERED' && t.deliveredAt) {
+                const deliveredAt = new Date(t.deliveredAt);
+                const diffHours = (now.getTime() - deliveredAt.getTime()) / (1000 * 60 * 60);
+                const hasOpenDispute = t.disputes.some(d => d.status === 'OPEN');
+
+                // If delivered over 24h ago with no disputes, it's effectively completed (not in escrow)
+                if (diffHours > 24 && !hasOpenDispute) {
+                    stillInEscrow = false;
+                }
+            }
+
+            if (stillInEscrow) {
+                escrowHeld += t.amount;
+            }
         });
 
         res.json({
@@ -19,7 +43,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             transactions: totalTransactions,
             products: totalProducts,
             openDisputes,
-            escrowHeld: escrowSum._sum.amount || 0
+            escrowHeld: escrowHeld
         });
     } catch (error) {
         console.error('Admin stats error:', error);
@@ -141,5 +165,31 @@ export const getAllTransactions = async (req: Request, res: Response) => {
         res.json(transactions);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching transactions' });
+    }
+};
+
+// Get All Agents (Admin View - Includes suspended)
+export const getAdminAgents = async (req: Request, res: Response) => {
+    try {
+        const agents: any[] = await prisma.$queryRaw`
+            SELECT id, email, "fullName", phone, "isSuspended", "createdAt"
+            FROM "User"
+            WHERE role = 'AGENT'
+            ORDER BY "createdAt" DESC
+        `;
+
+        const mappedAgents = agents.map(a => ({
+            id: a.id,
+            email: a.email,
+            fullName: a.fullName || a.fullname,
+            phone: a.phone,
+            isSuspended: a.isSuspended ?? a.issuspended ?? false,
+            createdAt: a.createdAt || a.createdat
+        }));
+
+        res.json(mappedAgents);
+    } catch (error) {
+        console.error('Error fetching admin agents:', error);
+        res.status(500).json({ message: 'Error fetching agent registry' });
     }
 };

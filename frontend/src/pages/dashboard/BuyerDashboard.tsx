@@ -13,11 +13,15 @@ const BuyerDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user) loadTransactions();
-    }, [user]);
+        loadTransactions();
+    }, []);
 
     const loadTransactions = async () => {
-        if (!user) return;
+        // Ensure we wait for the context user to be available for initial fetch
+        if (!user) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const data = await getUserTransactions(user.id, 'BUYER');

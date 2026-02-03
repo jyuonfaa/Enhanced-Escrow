@@ -18,23 +18,24 @@ const SellerDashboard: React.FC = () => {
     const [newProduct, setNewProduct] = useState({ name: '', description: '', price: 0, imageUrl: '' });
     const [responseFormData, setResponseFormData] = useState<{ [key: number]: string }>({});
     const [showDeliveryDetails, setShowDeliveryDetails] = useState<Transaction | null>(null);
-    const [stats, setStats] = useState({ salesMade: 0, escrowBalance: 0 });
     const [activeTab, setActiveTab] = useState<'PENDING' | 'COMPLETED' | 'HISTORY'>('PENDING');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user) {
-            loadInitialData();
-        }
+        loadInitialData();
     }, [user]);
 
     const loadInitialData = async () => {
         setLoading(true);
+        // Ensure we wait for the context user to be available for initial fetch
+        if (!user) {
+            setLoading(false);
+            return;
+        }
         await Promise.all([
             loadProducts(),
             loadTransactions(),
-            loadAgents(),
-            loadStats()
+            loadAgents()
         ]);
         setLoading(false);
     };
@@ -62,20 +63,6 @@ const SellerDashboard: React.FC = () => {
         }
     };
 
-    const loadStats = async () => {
-        if (user) {
-            try {
-                const data = await getSellerStats(user.id);
-                const safeStats = {
-                    salesMade: Number(data?.salesMade) || 0,
-                    escrowBalance: Number(data?.escrowBalance) || 0
-                };
-                setStats(safeStats);
-            } catch (error) {
-                console.error('Failed to load stats', error);
-            }
-        }
-    };
 
     const loadAgents = async () => {
         try {
@@ -173,9 +160,21 @@ const SellerDashboard: React.FC = () => {
         }
     };
 
-    const pendingTransactions = transactions.filter(t => t?.isPending);
-    const completedTransactions = transactions.filter(t => t?.status === 'COMPLETED' && !t.isPending);
-    const historyTransactions = transactions.filter(t => (t?.status === 'REFUNDED' || t?.status === 'RETURNED') && !t.isPending);
+    // Calculate stats locally from transactions to ensure perfect sync
+    const localSalesMade = transactions.reduce((sum, t) => {
+        const isFinalized = !t.isPending && (t.status === 'COMPLETED' || t.status === 'DELIVERED');
+        return isFinalized ? sum + t.amount : sum;
+    }, 0);
+
+    const localEscrowBalance = transactions.reduce((sum, t) => {
+        // Active escrow = anything in transit, held, delivered < 24h, or disputed
+        const inEscrow = t.isPending && ['ESCROW_HELD', 'AWAITING_OTP', 'DELIVERED', 'DISPUTED'].includes(t.status);
+        return inEscrow ? sum + t.amount : sum;
+    }, 0);
+
+    const pendingTransactions = transactions.filter(t => t?.isPending && t.status !== 'REFUNDED' && t.status !== 'RETURNED');
+    const completedTransactions = transactions.filter(t => !t.isPending && (t?.status === 'COMPLETED' || t?.status === 'DELIVERED'));
+    const historyTransactions = transactions.filter(t => (t?.status === 'REFUNDED' || t?.status === 'RETURNED'));
 
     let displayedTransactions = pendingTransactions;
     if (activeTab === 'COMPLETED') displayedTransactions = completedTransactions;
@@ -220,18 +219,18 @@ const SellerDashboard: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 <div className="card" style={{ background: 'var(--color-brand)', color: 'white', border: 'none' }}>
                     <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Total Sales (Withdrawable)</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>GH₵{stats.salesMade.toFixed(2)}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>GH₵{localSalesMade.toFixed(2)}</div>
                     <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>Funds from completed orders</div>
                 </div>
                 <div className="card" style={{ background: '#f8fafc', border: '1px solid var(--border)' }}>
                     <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Active Escrow</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-brand)' }}>GH₵{stats.escrowBalance.toFixed(2)}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-brand)' }}>GH₵{localEscrowBalance.toFixed(2)}</div>
                     <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>Held until delivery + 24h</div>
                 </div>
-                <div className="card" style={{ background: '#fff1f2', border: '1px solid #fecdd3' }}>
-                    <div style={{ fontSize: '0.875rem', color: '#9f1239', marginBottom: '0.5rem' }}>Returns/Refunds</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#be123c' }}>{historyTransactions.length}</div>
-                    <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: '#9f1239' }}>Orders refunded to buyer</div>
+                <div className="card" style={{ background: '#f8fafc', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Finalized Returns</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)' }}>{historyTransactions.length}</div>
+                    <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>Items returned or refunded</div>
                 </div>
             </div>
 
@@ -314,7 +313,7 @@ const SellerDashboard: React.FC = () => {
                                 color: activeTab === 'HISTORY' ? 'var(--text-main)' : 'var(--text-muted)'
                             }}
                         >
-                            Returned/Refunded
+                            Refund {historyTransactions.length > 0 && `(${historyTransactions.length})`}
                         </button>
                     </div>
                 </div>
@@ -341,10 +340,10 @@ const SellerDashboard: React.FC = () => {
                                         fontSize: '0.7rem',
                                         fontWeight: 800,
                                         textTransform: 'uppercase',
-                                        background: t.status === 'COMPLETED' ? '#dcfce7' : (t.status === 'DISPUTED' || t.status === 'REFUNDED') ? '#fee2e2' : t.status === 'RETURNED' ? '#dbeafe' : '#fef9c3',
-                                        color: t.status === 'COMPLETED' ? '#166534' : (t.status === 'DISPUTED' || t.status === 'REFUNDED') ? '#991b1b' : t.status === 'RETURNED' ? '#1e40af' : '#854d0e'
+                                        background: (!t.isPending && (t.status === 'COMPLETED' || t.status === 'DELIVERED')) ? '#dcfce7' : t.status === 'REFUNDED' ? '#fee2e2' : t.status === 'DISPUTED' ? '#fef3c7' : t.status === 'RETURNED' ? '#dbeafe' : '#fef9c3',
+                                        color: (!t.isPending && (t.status === 'COMPLETED' || t.status === 'DELIVERED')) ? '#166534' : t.status === 'REFUNDED' ? '#991b1b' : t.status === 'DISPUTED' ? '#92400e' : t.status === 'RETURNED' ? '#1e40af' : '#854d0e'
                                     }}>
-                                        {t.status === 'RETURNED' ? 'ITEM RECOVERED' : t.status}
+                                        {t.status === 'RETURNED' ? 'ITEM RECOVERED & REFUNDED' : (!t.isPending && (t.status === 'COMPLETED' || t.status === 'DELIVERED')) ? 'SALES FINALIZED' : t.status}
                                     </span>
                                 </div>
                             </div>
@@ -384,7 +383,7 @@ const SellerDashboard: React.FC = () => {
                                     </div>
                                 )}
 
-                                {(t.status === 'DISPUTED' || t.status === 'REFUNDED') && t.disputes?.[0]?.itemStatus !== 'RECEIVED' && (
+                                {(t.status === 'DISPUTED') && t.disputes?.[0]?.itemStatus !== 'RECEIVED' && (
                                     <button
                                         onClick={() => handleConfirmReturn(t.id)}
                                         className="btn"
@@ -505,14 +504,14 @@ const SellerDashboard: React.FC = () => {
                                         {(() => {
                                             const s = showDeliveryDetails.status;
                                             if (s === 'COMPLETED') return 'ITEM DELIVERED';
-                                            if (s === 'RETURNED') return 'ITEM RECEIVED';
-                                            if (s === 'REFUNDED' || s === 'DISPUTED') return 'RETURNING TO YOU';
+                                            if (s === 'RETURNED' || s === 'REFUNDED') return 'ITEM RECOVERED & REFUNDED';
+                                            if (s === 'DISPUTED') return 'RETURNING TO YOU';
                                             return 'IN TRANSIT';
                                         })()}
                                     </div>
                                 </div>
                                 <span style={{ fontSize: '1.5rem' }}>
-                                    {(showDeliveryDetails.status === 'COMPLETED' || showDeliveryDetails.status === 'RETURNED') ? '✅' : '🚚'}
+                                    {(['COMPLETED', 'RETURNED', 'REFUNDED'].includes(showDeliveryDetails.status)) ? '✅' : '🚚'}
                                 </span>
                             </div>
                         </div>

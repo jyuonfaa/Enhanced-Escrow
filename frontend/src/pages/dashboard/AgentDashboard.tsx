@@ -14,11 +14,14 @@ const AgentDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user) loadJobs();
-    }, [user]);
+        loadJobs();
+    }, []);
 
     const loadJobs = async () => {
-        if (!user) return;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const data = await getAgentJobs(user.id);

@@ -19,12 +19,15 @@ export const assignAgent = async (req: Request, res: Response) => {
             return res.status(403).json({ message: 'Unauthorized. You can only assign agents to your own sales.' });
         }
 
-        // 2. Verify agent role
+        // 2. Verify agent role and suspension status
         const agent = await prisma.user.findUnique({
             where: { id: agentId }
         });
         if (!agent || agent.role !== 'AGENT') {
             return res.status(400).json({ message: 'User is not a valid delivery agent' });
+        }
+        if (agent.isSuspended) {
+            return res.status(400).json({ message: 'This agent is suspended and cannot be assigned jobs.' });
         }
 
         const transaction = await prisma.transaction.update({
@@ -46,7 +49,7 @@ export const getAgentJobs = async (req: Request, res: Response) => {
         const transactions = await prisma.transaction.findMany({
             where: {
                 agentId: Number(agentId),
-                status: { notIn: ['COMPLETED', 'RETURNED', 'REFUNDED'] }
+                status: { notIn: ['DELIVERED', 'COMPLETED', 'RETURNED', 'REFUNDED'] }
             }, // Show active jobs and returns in progress
             include: {
                 product: true,
@@ -158,14 +161,41 @@ export const confirmReturnReceived = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Return can only be confirmed for disputed or refunded transactions.' });
         }
 
+        // Check if there is an open "BOUNCED" dispute for this transaction
+        const openDispute = await prisma.dispute.findFirst({
+            where: {
+                transactionId,
+                status: 'OPEN',
+                itemStatus: 'BOUNCED'
+            }
+        });
+
+        // If it's a bounce, seller confirmation automatically triggers the refund
+        const newStatus = openDispute ? 'REFUNDED' : 'RETURNED';
+
         const updatedTransaction = await prisma.transaction.update({
             where: { id: transactionId },
             data: {
-                status: 'RETURNED',
+                status: newStatus,
             },
         });
 
-        res.json({ message: 'Item return confirmed', transaction: updatedTransaction });
+        // Automatically resolve the dispute if it was a bounce
+        if (openDispute) {
+            await prisma.dispute.update({
+                where: { id: openDispute.id },
+                data: {
+                    status: 'RESOLVED',
+                    decision: 'REFUND_BUYER',
+                    decisionReason: 'Seller confirmed receipt of bounced item.',
+                }
+            });
+        }
+
+        res.json({
+            message: openDispute ? 'Return confirmed and refund processed automatically.' : 'Item return confirmed',
+            transaction: updatedTransaction
+        });
     } catch (error: any) {
         res.status(500).json({ message: 'Error confirming return' });
     }

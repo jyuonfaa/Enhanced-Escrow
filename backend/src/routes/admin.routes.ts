@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDashboardStats, getAllUsers, toggleUserSuspension, getAllTransactions } from '../controllers/admin.controller';
+import { getDashboardStats, getAllUsers, toggleUserSuspension, getAllTransactions, getAdminAgents } from '../controllers/admin.controller';
 import { authenticateToken, authorizeRole } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -12,5 +12,6 @@ router.get('/stats', getDashboardStats);
 router.get('/users', getAllUsers);
 router.patch('/users/:userId/suspend', toggleUserSuspension);
 router.get('/transactions', getAllTransactions);
+router.get('/agents', getAdminAgents);
 
 export default router;

@@ -10,7 +10,7 @@ router.get('/:id', getProductById);
 
 // Protected routes
 router.post('/', authenticateToken, authorizeRole(['SELLER']), createProduct);
-router.get('/seller/:sellerId', authenticateToken, authorizeRole(['SELLER', 'ADMIN']), getSellerProducts);
+router.get('/seller/:sellerId', authenticateToken, authorizeRole(['SELLER']), getSellerProducts);
 router.put('/:id', authenticateToken, authorizeRole(['SELLER']), updateProduct);
 router.delete('/:id', authenticateToken, authorizeRole(['SELLER', 'ADMIN']), deleteProduct);
 

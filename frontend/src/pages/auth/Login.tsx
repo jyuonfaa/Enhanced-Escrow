@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,13 @@ const Login: React.FC = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            navigate('/dashboard');
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

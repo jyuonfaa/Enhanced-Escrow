@@ -15,8 +15,17 @@ import './index.css';
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }: { children: JSX.Element, roles?: string[] }) => {
     const { user, isAuthenticated } = useAuth();
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
-    if (roles && user && !roles.includes(user.role)) return <Navigate to="/" replace />;
+    const token = localStorage.getItem('token');
+
+    // While checking if we are authenticated
+    if (!isAuthenticated && !token) return <Navigate to="/login" replace />;
+
+    // If we have a token but context isn't ready, show loader (Persistence insurance)
+    if (!user) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-app)' }}>
+        <div className="loader"></div>
+    </div>;
+
+    if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />;
     return children;
 };
 
@@ -70,7 +79,7 @@ function App() {
                     } />
 
                     {/* Main Redirect */}
-                    <Route path="/" element={<Navigate to="/login" replace />} />
+                    <Route path="/" element={<DashboardRedirect />} />
                     <Route path="/dashboard" element={<DashboardRedirect />} />
                 </Routes>
             </Router>
