@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'>
+<title>Enhanced Escrow - Final Year Project Documentation</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; line-height: 1.6; color: #333; padding: 0; }
+  h1, h2, h3 { color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+  th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+  th { background-color: #f8f9fa; }
+  code { background-color: #f1f2f3; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+  pre { background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+  a { text-decoration: none; color: #0056b3; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div align="center">
+  <h1>Enhanced Escrow System</h1>
+  <h3>Final Year Project Documentation & System Design</h3>
+  <br/>
+  <p><strong>A Secure Platform for Trustless Peer-to-Peer Transactions</strong></p>
+  <br/>
+  <p><em>Prepared following Industry Standard Practices</em></p>
+</div>
+
+<div style="page-break-after: always;"></div>
+
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#1-executive-summary">Executive Summary</a></li>
+<li><a href="#2-introduction-and-background">Introduction and Background</a></li>
+<li><a href="#3-system-requirements-specifications-srs">System Requirements Specifications (SRS)</a></li>
+<li><a href="#4-system-architecture--technology-stack">System Architecture &amp; Technology Stack</a></li>
+<li><a href="#5-database-design--data-modeling">Database Design &amp; Data Modeling</a></li>
+<li><a href="#6-security--risk-management">Security &amp; Risk Management</a></li>
+<li><a href="#7-core-workflows--business-logic">Core Workflows &amp; Business Logic</a></li>
+<li><a href="#8-testing-strategy">Testing Strategy</a></li>
+<li><a href="#9-implementation--local-development-setup">Implementation &amp; Local Development Setup</a></li>
+<li><a href="#10-deployment--maintenance-guidelines">Deployment &amp; Maintenance Guidelines</a></li>
+<li><a href="#11-conclusion">Conclusion</a></li>
+</ol>
+<div style="page-break-after: always;"></div>
+
+<h2>1. Executive Summary <a id="1-executive-summary"></a></h2>
+<p>The Enhanced Escrow System is a web-based, multi-tiered platform engineered to facilitate secure peer-to-peer (P2P) localized commerce. It integrates an intermediary delivery proxy into the transaction lifecycle to mitigate online fraud. Funds transferred by buyers are held securely in escrow and only released to sellers when the delivery agent verifies the item&#39;s handover using cryptographic authentication (OTP) and photographic evidence.</p>
+<h2>2. Introduction and Background <a id="2-introduction-and-background"></a></h2>
+<h3>2.1 Problem Statement</h3>
+<p>The proliferation of social media marketplaces has led to an increase in P2P trade. However, the lack of intermediary trust mechanisms exposes users to significant financial risks. Sellers avoid shipping items before receiving payment, while buyers avoid paying before receiving the item. The resulting stalemate frequently impedes legitimate commerce.</p>
+<h3>2.2 Project Scope &amp; Objectives</h3>
+<ul>
+<li><strong>Secure Fund Management:</strong> Implement logical escrow parameters that tie capital flow directly to verified events.</li>
+<li><strong>Delivery Verification:</strong> Institute a multi-factor verification protocol across Buyers and Delivery Agents.</li>
+<li><strong>Conflict Arbitration:</strong> Provide robust dispute management interfaces for administrative mediation.</li>
+</ul>
+<h2>3. System Requirements Specifications (SRS) <a id="3-system-requirements-specifications-srs"></a></h2>
+<h3>3.1 Functional Requirements</h3>
+<ol>
+<li>The system does authenticate Users via JSON Web Tokens (JWT) into specific roles (Buyer, Seller, Agent, Admin).</li>
+<li>The system does enable Sellers to list catalog items with pricing and descriptions.</li>
+<li>The system does enable Buyers to initiate an Escrow transaction for a listed product.</li>
+<li>The system does enable System Administrators to assign delivery jobs to registered Agents.</li>
+<li>The system does require the Delivery Agent to supply a Buyer-generated OTP to finalize a delivery.</li>
+<li>The system does allow Buyers to initiate a Dispute holding state prior to completion.</li>
+</ol>
+<h3>3.2 Non-Functional Requirements</h3>
+<ol>
+<li><strong>Performance:</strong> The platform backend architecture must respond to stateless client requests in under 200ms.</li>
+<li><strong>Security:</strong> Passwords are cryptographically hashed using <strong>bcrypt</strong> before database transmission. All endpoints require strict stateless authorization middleware.</li>
+<li><strong>Scalability:</strong> The architecture will decouple the client layer (React) from the business layer (Express/Node) enabling independent scaling.</li>
+</ol>
+<h2>4. System Architecture &amp; Technology Stack <a id="4-system-architecture--technology-stack"></a></h2>
+<p>Built utilizing the PERN architectural paradigm (PostgreSQL, Express, React, Node) configured for robust scalability.</p>
+<ul>
+<li><strong>Presentation Layer (Frontend):</strong> <ul>
+<li><strong>Framework:</strong> React.js, compiled by Vite for rapid HMR and optimized production bundling.</li>
+<li><strong>Type Safety:</strong> TypeScript ensures component data consistency.</li>
+<li><strong>State Client:</strong> Axios for HTTP client requests over standard REST principles.</li>
+</ul>
+</li>
+<li><strong>Application Layer (Backend):</strong><ul>
+<li><strong>Runtime:</strong> Node.js (v18+)</li>
+<li><strong>Framework:</strong> Express.js providing extensive middleware pipeline management.</li>
+</ul>
+</li>
+<li><strong>Data Persistence Layer (Database):</strong><ul>
+<li><strong>Database Engine:</strong> PostgreSQL</li>
+<li><strong>ORM Middleware:</strong> Prisma ORM, providing type-safe SQL query generation and strict schema migrations.</li>
+</ul>
+</li>
+</ul>
+<h2>5. Database Design &amp; Data Modeling (ERD Equivalent) <a id="5-database-design--data-modeling"></a></h2>
+<table>
+<thead>
+<tr>
+<th align="left">Entity</th>
+<th align="left">Primary Key</th>
+<th align="left">Critical Attributes</th>
+<th align="left">Relationships</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>User</strong></td>
+<td align="left"><code>id</code></td>
+<td align="left"><code>email</code>, <code>passwordHash</code>, <code>role</code></td>
+<td align="left">1:M to Products, 1:M to Transactions</td>
+</tr>
+<tr>
+<td align="left"><strong>Product</strong></td>
+<td align="left"><code>id</code></td>
+<td align="left"><code>price</code>, <code>sellerId</code></td>
+<td align="left">M:1 to User (Seller), 1:M to Transactions</td>
+</tr>
+<tr>
+<td align="left"><strong>Transaction</strong></td>
+<td align="left"><code>id</code></td>
+<td align="left"><code>amount</code>, <code>status</code>, <code>agentId</code></td>
+<td align="left">M:1 to User, M:1 to Product</td>
+</tr>
+<tr>
+<td align="left"><strong>Dispute</strong></td>
+<td align="left"><code>id</code></td>
+<td align="left"><code>reason</code>, <code>status</code>, <code>transactionId</code></td>
+<td align="left">1:1 to Transaction</td>
+</tr>
+</tbody></table>
+<p><em>Note: Roles determine foreign key assignment within the Transaction model (buyerId, sellerId, agentId loop back to User entity).</em></p>
+<h2>6. Security &amp; Risk Management <a id="6-security--risk-management"></a></h2>
+<ol>
+<li><strong>Endpoint Protection:</strong> Express API routes are strictly guarded by Role-Based Access Control (RBAC) middleware verifying JWT signatures continuously.</li>
+<li><strong>Input Validation:</strong> Backend models utilize strict type coercion through Prisma schemas preventing SQL Injection.</li>
+<li><strong>Escrow Bypass Prevention:</strong> The core database schema prevents manual <code>status</code> mutation to <code>COMPLETED</code> unless the transaction state explicitly satisfies the OTP string validation matching the server&#39;s generated hash.</li>
+</ol>
+<h2>7. Core Workflows &amp; Business Logic <a id="7-core-workflows--business-logic"></a></h2>
+<h3>7.1 The Escrow Verification Pipeline</h3>
+<ol>
+<li><strong>Initialization (Buyer):</strong> Triggers <code>POST /api/transactions</code>. Backend verifies funds (simulated) and locks state to <code>ESCROW_HELD</code>.</li>
+<li><strong>Assignment (Admin):</strong> Modifies Transaction metadata assigning <code>agentId</code>.</li>
+<li><strong>Transit Authentication (Agent &amp; Buyer):</strong> Agent requests <code>POST /api/transactions/:id/verify</code> attaching <code>otp</code> and <code>photoProof</code>. </li>
+<li><strong>Resolution (System):</strong> Backend compares attached <code>otp</code> against the stored <code>escrowCode</code>. Upon success, <code>status</code> updates to <code>COMPLETED</code>, transferring capital to Seller.</li>
+</ol>
+<h2>8. Testing Strategy <a id="8-testing-strategy"></a></h2>
+<p>Industry-grade documentation necessitates robust QA protocols:</p>
+<ul>
+<li><strong>Unit Testing:</strong> Individual functional endpoints and cryptographic hash functions.</li>
+<li><strong>Integration Testing:</strong> Verification of sequential lifecycle (e.g., from <code>Pending</code> -&gt; <code>Escrow Held</code> -&gt; <code>Completed</code>).</li>
+<li><strong>User Acceptance Testing (UAT):</strong> Testing role dashboard functionality (Buyer UI vs. Seller UI).</li>
+</ul>
+<h2>9. Implementation &amp; Local Development Setup <a id="9-implementation--local-development-setup"></a></h2>
+<p>To initialize and run the system locally for development or evaluation purposes, two terminal instances are required.</p>
+<p><strong>Prerequisite:</strong> Ensure <strong>Node.js (v18 or newer)</strong> is installed on the host machine.</p>
+<h3>9.1 Backend Initialization (Terminal 1)</h3>
+<ol>
+<li>Navigate to the backend directory: <code>cd backend</code></li>
+<li>Install necessary dependencies: <code>npm install</code></li>
+<li>Generate the Prisma database client: <code>npx prisma generate</code></li>
+<li>Start the Node.js development server: <code>npm run dev</code>
+<em>(The backend API will boot up and bind to Port 5002)</em></li>
+</ol>
+<h3>9.2 Frontend Client Initialization (Terminal 2)</h3>
+<ol>
+<li>Open a new terminal and navigate to the frontend directory: <code>cd frontend</code></li>
+<li>Install necessary dependencies: <code>npm install</code></li>
+<li>Start the Vite development server: <code>npm run dev</code>
+<em>(The React application will boot up and bind to Port 3000)</em></li>
+</ol>
+<h3>9.3 System Access</h3>
+<p>Once both servers are running synchronously, open a web browser and navigate to <code>http://localhost:3000</code>. The default administrator dashboard can be accessed using the pre-seeded testing credentials:</p>
+<ul>
+<li><strong>Email:</strong> <code>admin@gmail.com</code></li>
+<li><strong>Password:</strong> <code>12345678</code></li>
+</ul>
+<h2>10. Deployment &amp; Maintenance Guidelines <a id="10-deployment--maintenance-guidelines"></a></h2>
+<h3>CI/CD Paradigm</h3>
+<ul>
+<li><strong>Backend Infrastructure:</strong> Render or Heroku environments relying on unified <code>npm start</code> commands wrapped over <code>.env</code> injection.</li>
+<li><strong>Database Synchronization:</strong> Pre-deployment hooks utilize <code>npx prisma migrate deploy</code> ensuring host database parity with application schema.</li>
+<li><strong>Client Infrastructure:</strong> Vercel edges serving static optimized <code>/dist</code> directories generated by <code>vite build</code>. API Base URLs are dynamically mapped through Vite environmental variables (<code>VITE_API_URL</code>).</li>
+</ul>
+<h2>11. Conclusion <a id="11-conclusion"></a></h2>
+<p>The Enhanced Escrow System operates precisely as a standardized safety mechanism for unverified digital commerce markets. Through logical constraints, physical authentication standards, and modern Javascript tooling, the architecture reliably mitigates P2P fraud risks, providing confidence to arbitrary internet transactions.</p>
+
+</body>
+</html>
