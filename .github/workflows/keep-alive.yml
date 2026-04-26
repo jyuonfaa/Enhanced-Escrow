@@ -1,0 +1,20 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Web Service
+        run: |
+          if [ -z "${{ secrets.RENDER_URL }}" ]; then
+            echo "Error: RENDER_URL secret is not set."
+            exit 1
+          fi
+          echo "Pinging backend at ${{ secrets.RENDER_URL }}/api/health..."
+          curl -s -f -m 10 "${{ secrets.RENDER_URL }}/api/health" || echo "Ping completed (even if health endpoint returned non-200, it wakes up the server)"
