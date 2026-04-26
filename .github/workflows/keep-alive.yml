@@ -16,5 +16,5 @@ jobs:
             echo "Error: RENDER_URL secret is not set."
             exit 1
           fi
-          echo "Pinging backend at ${{ secrets.RENDER_URL }}/api/health..."
-          curl -s -f -m 10 "${{ secrets.RENDER_URL }}/api/health" || echo "Ping completed (even if health endpoint returned non-200, it wakes up the server)"
+          echo "Pinging backend at ${{ secrets.RENDER_URL }}/api/health-db..."
+          curl -s -f -m 10 "${{ secrets.RENDER_URL }}/api/health-db" || echo "Ping completed (even if health endpoint returned non-200, it wakes up the server)"
